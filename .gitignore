@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# SSG Output
+dist/
+
+# Editor/Temp
+.vscode/
+.idea/
+*.swp
+.DS_Store

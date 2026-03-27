@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .player-layout {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        height: calc(100vh - 84px);
+        background: white;
+    }
+
+    .sidebar {
+        background: var(--creme-acolhimento);
+        border-right: 1px solid var(--verde-palido);
+        overflow-y: auto;
+        padding: 30px;
+    }
+
+    .lesson-item {
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+        border: 1px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .lesson-item:hover {
+        border-color: var(--verde-esperanca);
+        transform: translateX(5px);
+    }
+
+    .lesson-item.active {
+        background: var(--verde-esperanca);
+        color: white;
+    }
+
+    .lesson-item .icon {
+        width: 32px;
+        height: 32px;
+        background: var(--verde-palido);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 14px;
+        color: var(--verde-esperanca);
+    }
+
+    .lesson-item.active .icon {
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+
+    .main-player {
+        padding: 40px;
+        overflow-y: auto;
+    }
+
+    .video-container {
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: #000;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+    }
+
+    .course-header {
+        margin-bottom: 30px;
+    }
+
+    @media (max-width: 1024px) {
+        .player-layout {
+            grid-template-columns: 1fr;
+            height: auto;
+        }
+        .sidebar {
+            height: 300px;
+        }
+    }
+</style>
+
+<div class="player-layout">
+    <aside class="sidebar">
+        <h3 id="sidebar-course-title">Seu Curso</h3>
+        <p class="label" style="margin-bottom: 24px;">Conteúdo das Aulas</p>
+        <div id="lesson-list">
+            <!-- Dinâmico -->
+        </div>
+    </aside>
+
+    <main class="main-player">
+        <div class="course-header">
+            <div id="course-badge" class="label">Módulo 1</div>
+            <h1 id="current-lesson-title" style="font-size: 32px; margin-bottom: 8px;">Selecione uma aula</h1>
+            <p id="current-lesson-desc">Bem-vindo à sua área de aprendizado.</p>
+        </div>
+
+        <div class="video-container" id="video-frame">
+            <div style="width:100%; height:100%; display:grid; place-items:center; color:white; background: linear-gradient(45deg, var(--verde-escuro), var(--verde-esperanca));">
+                <div style="text-align:center;">
+                    <span style="font-size: 48px;">🎥</span>
+                    <p style="margin-top:20px; font-weight:700;">Clique em uma aula para iniciar</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 30px; border: 1px solid var(--verde-palido);">
+            <h3>Material Complementar</h3>
+            <p>Os materiais desta aula estarão disponíveis em breve para download.</p>
+        </div>
+    </main>
+</div>
+
+<script>
+    const courses = {{ site_data.courses | tojson }};
+    
+    // Simplificação: Pegamos o primeiro curso ou via URL ?id=...
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseId = urlParams.get('id') || 'gestao';
+    const currentCourse = courses.find(c => c.id === courseId);
+
+    if (currentCourse) {
+        document.getElementById('sidebar-course-title').innerText = currentCourse.title;
+        const list = document.getElementById('lesson-list');
+        
+        currentCourse.lessons.forEach((lesson, index) => {
+            const item = document.createElement('div');
+            item.className = 'lesson-item';
+            item.innerHTML = `
+                <div class="icon">${index + 1}</div>
+                <div>
+                    <div style="font-weight:700;">${lesson.title}</div>
+                    <div style="font-size:12px; opacity:0.7;">Vídeo Aula</div>
+                </div>
+            `;
+            item.onclick = () => selectLesson(lesson, item);
+            list.appendChild(item);
+        });
+    }
+
+    function selectLesson(lesson, element) {
+        document.querySelectorAll('.lesson-item').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        
+        document.getElementById('current-lesson-title').innerText = lesson.title;
+        document.getElementById('video-frame').innerHTML = `
+            <iframe width="100%" height="100%" src="https://www.youtube.com/embed/${lesson.video_id}?rel=0" frameborder="0" allowfullscreen></iframe>
+        `;
+    }
+</script>
+{% endblock %}

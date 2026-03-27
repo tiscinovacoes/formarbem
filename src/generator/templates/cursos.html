@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- SEO: Schema.org Courses -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "itemListElement": [
+    {% for course in site_data.courses %}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "item": {
+        "@type": "Course",
+        "name": "{{ course.title }}",
+        "description": "{{ course.description }}",
+        "provider": {
+          "@type": "Organization",
+          "name": "Instituto Formar Bem",
+          "sameAs": "https://formarbem.org.br"
+        }
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+<section id="cursos-list" style="background: var(--ocre-palido);">
+    <div class="container">
+        <div class="accent-bar" style="margin: 0 auto 30px;"></div>
+        <div style="text-align: center; max-width: 800px; margin: 0 auto 60px;">
+            <span class="label">Conhecimento que Transforma</span>
+            <h1>Cursos Disponíveis</h1>
+            <p class="tagline">Explore nossas trilhas de aprendizado desenvolvidas por especialistas.</p>
+        </div>
+
+        <div class="programs-grid">
+            {% for course in site_data.courses %}
+            <div class="program-card reveal" style="transition-delay: {{ loop.index0 / 10 }}s;">
+                <span class="card-icon">{{ course.icon }}</span>
+                <h3>{{ course.title }}</h3>
+                <p>{{ course.description }}</p>
+                <div style="margin-top: 24px;">
+                    <span style="font-weight: 800; color: var(--verde-esperanca); display: block; margin-bottom: 12px;">{{ course.price | format_currency }}</span>
+                    <!-- Integration with Backend for Checkout -->
+                    <button onclick="startCheckout('{{ course.id }}')" class="btn btn-primary" style="width: 100%; text-align: center; border: none;">Matricule-se</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<script>
+async function startCheckout(courseId) {
+    try {
+        const response = await fetch(`http://localhost:8000/checkout/${courseId}`);
+        const data = await response.json();
+        if (data.checkout_url) {
+            window.location.href = data.checkout_url;
+        } else {
+            alert('Erro ao iniciar pagamento. Tente novamente mais tarde.');
+        }
+    } catch (error) {
+        console.error('Checkout error:', error);
+        alert('Erro de conexão com o servidor de pagamentos.');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+[
+    {
+        "id": "gestao",
+        "title": "Gestão Pública Eficiente",
+        "description": "Capacitação para servidores e gestores municipais focada em resultados e ética.",
+        "price": 497.00,
+        "category": "Gestão",
+        "icon": "📚",
+        "lessons": [
+            {"id": "m1-v1", "title": "Introdução à Gestão Moderna", "video_id": "123456"},
+            {"id": "m1-v2", "title": "Licitações e Contratos", "video_id": "789012"},
+            {"id": "m1-v3", "title": "Transparência Pública", "video_id": "345678"}
+        ]
+    },
+    {
+        "id": "pedagogia",
+        "title": "Inovação Pedagógica",
+        "description": "Novas metodologias para transformar a sala de aula e engajar a nova geração.",
+        "price": 297.00,
+        "category": "Educação",
+        "icon": "💡",
+        "lessons": [
+            {"id": "mod1-v1", "title": "O Novo Papel do Professor", "video_id": "654321"},
+            {"id": "mod1-v2", "title": "Metodologias Ativas na Prática", "video_id": "210987"}
+        ]
+    },
+    {
+        "id": "lideranca",
+        "title": "Liderança e Soft Skills",
+        "description": "Desenvolvimento humano para empresas privadas que buscam alta performance.",
+        "price": 397.00,
+        "category": "Corporativo",
+        "icon": "🚀",
+        "lessons": [
+            {"id": "l-v1", "title": "Inteligência Emocional no Trabalho", "video_id": "111222"},
+            {"id": "l-v2", "title": "Comunicação Não-Violenta", "video_id": "333444"}
+        ]
+    }
+]
