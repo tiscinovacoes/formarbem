@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from providers.mercadopago import MercadoPagoProvider
+from src.backend.providers.mercadopago import MercadoPagoProvider
 import os
 import json
 from dotenv import load_dotenv
@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from mail_service import MailService
+from src.backend.mail_service import MailService
 
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN")
 payment_manager = MercadoPagoProvider(MP_ACCESS_TOKEN, BASE_URL)
