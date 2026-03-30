@@ -35,8 +35,8 @@ template: "cursos.html"
 
             <div class="program-card reveal" style="transition-delay: 0.2s;">
                 <span class="card-icon">🚀</span>
-                <h3>Liderança e Soft Skills</h3>
-                <p>Desenvolvimento humano para empresas privadas que buscam alta performance.</p>
+                <h3>Combate ao Assédio Moral e Sexual</h3>
+                <p>capacitação no combate a assédio sexual e moral no ambito do trabalho.</p>
                 <div style="margin-top: 24px;">
                     <span style="font-weight: 800; color: var(--verde-esperanca); display: block; margin-bottom: 12px;">R$ 397,00</span>
                     <a href="#" class="btn btn-primary" style="width: 100%; text-align: center;">Ver Detalhes</a>
