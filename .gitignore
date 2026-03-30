@@ -6,7 +6,7 @@ venv/
 .env
 
 # SSG Output
-dist/
+# dist/
 
 # Editor/Temp
 .vscode/

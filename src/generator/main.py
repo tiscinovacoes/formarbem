@@ -50,7 +50,7 @@ class SSG:
 
     def generate_seo_files(self):
         pages = [f for f in os.listdir(self.output_dir) if f.endswith('.html')]
-        base_url = "https://formarbem.org.br"
+        base_url = "https://formarbem.com"
         
         # Sitemap.xml
         sitemap_content = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

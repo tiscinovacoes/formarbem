@@ -9,10 +9,12 @@ load_dotenv()
 
 app = FastAPI()
 
-# Enable CORS for the static site to call the API
+BASE_URL = os.getenv("BASE_URL", "https://formarbem.com").rstrip("/")
+
+# Configuração de CORS: Permitir apenas o domínio oficial e localhost para testes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict this to your domain
+    allow_origins=[BASE_URL, "http://localhost:3000", "http://127.0.0.1:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -20,7 +22,7 @@ app.add_middleware(
 from mail_service import MailService
 
 MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN")
-payment_manager = MercadoPagoProvider(MP_ACCESS_TOKEN)
+payment_manager = MercadoPagoProvider(MP_ACCESS_TOKEN, BASE_URL)
 mail_service = MailService()
 
 @app.get("/checkout/{course_id}")
