@@ -29,15 +29,9 @@ CKAN_2026 = "https://dadosabertos.tse.jus.br/api/3/action/package_show?id=result
 HEADERS = {"User-Agent": "Mozilla/5.0 (analise-apuracao-tse)"}
 MARCOS = list(range(5, 101, 5))
 
-# Candidatos de nome de coluna, em ordem de preferência (após normalização).
-COL_CANDIDATO = ["NM_VOTAVEL", "NM_URNA_CANDIDATO", "NM_CANDIDATO", "DS_VOTAVEL"]
-COL_VOTOS = ["QT_VOTOS_NOMINAIS_VALIDOS", "QT_VOTOS_NOMINAIS", "QT_VOTOS_TOTALIZADOS", "QT_VOTOS"]
-COL_PCT_SECOES = ["PC_SECOES_TOTALIZADAS", "PC_SECOES_APURADAS", "PERC_SECOES_TOTALIZADAS",
-                  "PR_SECOES_TOTALIZADAS", "PC_SECOES_TOT"]
-COL_SECOES_TOT = ["QT_SECOES_TOTALIZADAS", "QT_SECOES_APURADAS"]
-COL_SECOES_UNIV = ["QT_SECOES_TOTAL", "QT_SECOES_UNIVERSO", "QT_SECOES", "QT_TOTAL_SECOES"]
-COL_DATA = ["DT_TOTALIZACAO", "DT_ULTIMA_TOTALIZACAO", "DT_GERACAO"]
-COL_HORA = ["HH_TOTALIZACAO", "HH_ULTIMA_TOTALIZACAO", "HH_GERACAO"]
+# Nomes de coluna do histórico de totalização (após normalização).
+COL_PCT_SECOES = ["PE_SECOES_TOT_ACUMULADO"]
+COL_DATA = ["DT_TOTALIZACAO"]
 NAO_CANDIDATO = re.compile(r"BRANCO|NULO|ANULAD|ABSTEN", re.I)
 
 
@@ -93,41 +87,31 @@ def descobrir_2026() -> dict:
 
 # ----------------------------------------------------------------- análise
 def snapshots(df: pd.DataFrame, rotulo: str) -> pd.DataFrame:
-    """Uma linha por (candidato, totalização) com votos acumulados e % de seções."""
-    cols = set(df.columns)
-    c_cand, c_votos = achar(cols, COL_CANDIDATO), achar(cols, COL_VOTOS)
-    if not c_cand or not c_votos:
-        raise ValueError(f"[{rotulo}] não achei candidato/votos. Colunas: {sorted(cols)}")
+    """Converte o histórico (formato largo, uma coluna por candidato) em formato longo.
 
-    if "DS_CARGO" in cols:
-        df = df[df["DS_CARGO"].map(norm).str.contains("PRESIDENTE", na=False)]
-    for uf in ("SG_UF", "SG_UE"):
-        if uf in cols and (df[uf] == "BR").any():
-            df = df[df[uf] == "BR"]
-            break
+    Colunas usadas no arquivo do TSE:
+      DT_TOTALIZACAO, PE_SECOES_TOT_ACUMULADO (fração 0-1) e, por candidato,
+      <NOME>_QT_VOTOS_TOT_ACUMULADO.
+    """
+    cols = list(df.columns)
+    sufixo = "_QT_VOTOS_TOT_ACUMULADO"
+    cands = [c[: -len(sufixo)] for c in cols if c.endswith(sufixo)
+             and not NAO_CANDIDATO.search(c[: -len(sufixo)])]
+    c_pct, c_dt = achar(cols, COL_PCT_SECOES), achar(cols, COL_DATA)
+    if not cands or not c_pct or not c_dt:
+        raise ValueError(f"[{rotulo}] formato inesperado. Colunas: {cols}")
 
-    c_pct, c_tot, c_univ = (achar(cols, COL_PCT_SECOES), achar(cols, COL_SECOES_TOT),
-                            achar(cols, COL_SECOES_UNIV))
-    c_dt, c_hh = achar(cols, COL_DATA), achar(cols, COL_HORA)
-
-    out = pd.DataFrame({"candidato": df[c_cand].str.strip(),
-                        "votos": pd.to_numeric(df[c_votos], errors="coerce")})
-    num = lambda s: pd.to_numeric(s.str.replace(",", ".", regex=False), errors="coerce")
-    if c_pct:
-        out["pct_secoes"] = num(df[c_pct])
-    elif c_tot and c_univ:
-        out["pct_secoes"] = 100 * num(df[c_tot]) / num(df[c_univ])
-    else:
-        raise ValueError(f"[{rotulo}] sem coluna de % de seções. Colunas: {sorted(cols)}")
-
-    if c_dt:
-        txt = df[c_dt].astype(str) + (" " + df[c_hh].astype(str) if c_hh else "")
-        out["horario"] = pd.to_datetime(txt, dayfirst=True, errors="coerce")
-    else:
-        out["horario"] = pd.NaT
-    out["ordem"] = range(len(out))  # desempate: ordem original do arquivo
-    out = out[~out["candidato"].str.contains(NAO_CANDIDATO, na=False)].dropna(subset=["votos", "pct_secoes"])
-    return out
+    num = lambda s: pd.to_numeric(s.str.strip().str.replace(",", ".", regex=False), errors="coerce")
+    pct = num(df[c_pct])
+    pct = pct * 100 if pct.max() <= 1.0 else pct  # no arquivo é fração (1,0 = 100%)
+    base = pd.DataFrame({
+        "pct_secoes": pct,
+        "horario": pd.to_datetime(df[c_dt].str.strip(), dayfirst=True, errors="coerce"),
+        "ordem": range(len(df)),  # desempate: ordem original do arquivo
+    })
+    quadros = [base.assign(candidato=c.replace("_", " ").title(), votos=num(df[c + sufixo]))
+               for c in cands]
+    return pd.concat(quadros, ignore_index=True).dropna(subset=["votos", "pct_secoes"])
 
 
 def marcos_turno(snap: pd.DataFrame, ano: int, turno: str) -> pd.DataFrame:
@@ -181,7 +165,8 @@ def main():
     if not all(u26.values()):
         try:
             desc = descobrir_2026()
-            print("2026 descoberto no CKAN:", desc or "nada encontrado")
+            print("2026 descoberto no CKAN:", desc or
+                  "nada (o dataset resultados-2026 não publica histórico de totalização)")
             u26 = {t: u26[t] or desc.get(t) for t in u26}
         except Exception as e:  # noqa: BLE001
             print(f"Aviso: falha ao consultar CKAN 2026: {e}", file=sys.stderr)
@@ -216,9 +201,9 @@ def main():
 
     tabela.to_csv(f"{a.saida}.csv", index=False, sep=";", decimal=",", encoding="utf-8-sig")
     with pd.ExcelWriter(f"{a.saida}.xlsx") as xw:
-        tabela.to_excel(xw, "Evolução", index=False)
+        tabela.to_excel(xw, sheet_name="Evolução", index=False)
         if comp is not None:
-            comp.to_excel(xw, "Comparativo 2022x2026", index=False)
+            comp.to_excel(xw, sheet_name="Comparativo 2022x2026", index=False)
     print(f"\nExportado: {a.saida}.csv / {a.saida}.xlsx")
 
 
