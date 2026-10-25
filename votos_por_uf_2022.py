@@ -27,8 +27,8 @@ def main(turno: str = "2"):
     r.raise_for_status()
     with zipfile.ZipFile(io.BytesIO(r.content)) as z:
         df = pd.read_csv(z.open(ARQUIVO), sep=";", encoding="latin1", dtype=str,
-                         usecols=["NR_TURNO", "SG_UF", "NM_URNA_CANDIDATO", "QT_VOTOS_NOMINAIS_VALIDOS"])
-    df = df[df["NR_TURNO"] == turno]
+                         usecols=["NR_TURNO", "DS_CARGO", "SG_UF", "NM_URNA_CANDIDATO", "QT_VOTOS_NOMINAIS_VALIDOS"])
+    df = df[(df["NR_TURNO"] == turno) & (df["DS_CARGO"] == "Presidente")]  # só presidente
     df["votos"] = pd.to_numeric(df["QT_VOTOS_NOMINAIS_VALIDOS"])
     p = df.pivot_table(index="SG_UF", columns="NM_URNA_CANDIDATO", values="votos", aggfunc="sum").fillna(0).astype(int)
 
