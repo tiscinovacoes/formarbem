@@ -33,16 +33,21 @@ async function coletar(){
 function calc(rows){
   const ufs=UFS.filter(u=>u!=='BR');let W=0;const w={};
   for(const u of ufs){const f=fin(u);w[u]=f[0]+f[1];W+=w[u]}
-  let comp=0,proj=0,cov=0,n=0,ab=0,ri=0,ac=0;
+  let comp=0,proj=0,cov=0,n=0,ab=0,ri=0,ac=0;const est=[];
   for(const u of ufs){const r=rows[u];if(!r||!r.ts||r.l+r.f===0)continue;
     const p=100*r.st/r.ts,[l,b]=cum(u,p),l22=100*l/(l+b),l26=100*r.l/(r.l+r.f),f22=100*fin(u)[0]/w[u],sw=l26-l22,wt=w[u]/W;
-    comp+=wt*sw;proj+=wt*(f22+sw);cov+=wt*p/100;n+=wt;if(sw<=-1)ab++;else if(sw>=1)ac++;else ri++}
+    comp+=wt*sw;proj+=wt*(f22+sw);cov+=wt*p/100;n+=wt;est.push({u,p,l:l26,sw,pj:f22+sw});if(sw<=-1)ab++;else if(sw>=1)ac++;else ri++}
   const B=rows.BR,fb=fin('BR');
-  return{comp:comp/n,proj:proj/n,cov:100*cov/n,ab,ri,ac,hora:B.hora,pb:100*B.st/B.ts,l:B.l,f:B.f,f22:100*fb[0]/(fb[0]+fb[1])};
+  return{est,comp:comp/n,proj:proj/n,cov:100*cov/n,ab,ri,ac,hora:B.hora,pb:100*B.st/B.ts,l:B.l,f:B.f,f22:100*fb[0]/(fb[0]+fb[1])};
 }
 const box=document.createElement('div');box.id='lulo-ov';
-box.style.cssText='position:fixed;top:12px;right:12px;z-index:2147483647;width:300px;background:#fff;color:#17202a;font:13px/1.4 system-ui,sans-serif;border:2px solid #17202a;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.35);padding:10px 12px';
+box.style.cssText='position:fixed;top:12px;right:12px;z-index:2147483647;width:340px;max-height:92vh;overflow:auto;background:#fff;color:#17202a;font:13px/1.4 system-ui,sans-serif;border:2px solid #17202a;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.35);padding:10px 12px';
 document.body.appendChild(box);
+function tabela(c){
+  const lin=[...c.est].sort((a,b)=>a.sw-b.sw).map(r=>{const cor=r.sw<=-1?'#d4651a':r.sw>=1?'#1f7a8c':'#5d6975';
+    return `<tr><td>${r.u}${r.p<5?' *':''}</td><td style="text-align:right">${pc(r.p,0)}</td><td style="text-align:right">${pc(r.l,1)}</td><td style="text-align:right;color:${cor};font-weight:600">${pp(r.sw,1)}</td><td style="text-align:right">${pc(r.pj,1)}</td></tr>`}).join('');
+  return `<div style="margin-top:8px;font-weight:600">Estados (do mais abaixo ao mais acima de 2022)</div><div style="max-height:210px;overflow:auto;border:1px solid #dfe3e7;border-radius:5px;margin-top:3px"><table style="width:100%;border-collapse:collapse;font-size:11.5px"><thead style="position:sticky;top:0;background:#f5f6f7"><tr><th style="text-align:left">UF</th><th style="text-align:right">Apurado</th><th style="text-align:right">Lula</th><th style="text-align:right">Desvio</th><th style="text-align:right">Projeção</th></tr></thead><tbody>${lin}</tbody></table></div><div style="color:#5d6975;font-size:11px;margin-top:2px">* menos de 5% apurado, desvio instável</div>`;
+}
 function draw(c,msg){
   const a=Math.abs(c.comp),cor=a<0.5?'#5d6975':c.comp<0?'#d4651a':'#1f7a8c',txt=a<0.5?'No ritmo de 2022':(a<1.5?'Ligeiramente ':'')+(c.comp<0?'abaixo':'acima')+' de 2022';
   box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><b>Lulômetro · 2º turno</b><span id="lulo-x" style="cursor:pointer;color:#5d6975">fechar</span></div>
@@ -52,6 +57,7 @@ function draw(c,msg){
   <div>Seções: ${pc(c.pb,1)} · cobertura ponderada ${pc(c.cov,1)}</div>
   <div>Estados abaixo / no ritmo / acima: ${c.ab} / ${c.ri} / ${c.ac}</div>
   <div style="color:#5d6975;margin-top:4px">Leitura de ${c.hora}<br><span id="lulo-s">${msg||''}</span></div>
+  ${tabela(c)}
   <button id="lulo-c" style="margin-top:6px;padding:4px 10px;border:1px solid #17202a;background:#fff;border-radius:5px;cursor:pointer">Copiar CSV para o painel</button>`;
   document.getElementById('lulo-x').onclick=()=>window.__lulo.stop(true);
   document.getElementById('lulo-c').onclick=async e=>{try{await navigator.clipboard.writeText(window.__res);e.target.textContent='Copiado'}catch(x){e.target.textContent='Use copy(__res)'}};
